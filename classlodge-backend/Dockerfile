@@ -1,16 +1,24 @@
+# Usar una imagen base de Ubuntu para construir el proyecto
 FROM ubuntu:latest AS build
 
-RUN apt-get update
-RUN apt-get install openjdk-17-jdk -y
+# Instalar JDK y Maven
+RUN apt-get update && \
+    apt-get install -y openjdk-17-jdk maven
+
+# Copiar el código fuente del proyecto al contenedor
 COPY . .
 
-RUN ./mvnw bootJar --no-daemon
+# Usar Maven para construir el proyecto y generar el JAR
+RUN mvn package -DskipTests
 
+# Usar una imagen base de OpenJDK para ejecutar la aplicación
 FROM openjdk:17-jdk-slim
 
+# Exponer el puerto en el que se ejecutará la aplicación
 EXPOSE 8080
 
-COPY --from=target /target/classlodge-1.jar classlodge.jar
-#COPY --from=build /build/libs/classlodge-1.jar classlodge.jar
+# Copiar el JAR desde el contenedor de construcción al contenedor de ejecución
+COPY --from=build target/classlodge-1.jar classlodge.jar
 
+# Ejecutar la aplicación
 ENTRYPOINT ["java", "-jar", "classlodge.jar"]
